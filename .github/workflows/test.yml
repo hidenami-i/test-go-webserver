@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+name: test
+# https://github.com/actions/setup-go
+# https://github.com/k1LoW/octocov-action
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        uses: actions/checkout@v3
+      -
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      -
+        name: Run tests with coverage report output
+        run: go test ./... -coverprofile=coverage.out
+      -
+        uses: k1LoW/octocov-action@v0
