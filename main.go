@@ -23,9 +23,9 @@ func main() {
 		return
 	}
 	err = run(context.Background(), l)
-	if err != nil {
-		log.Printf("failed to terminate server: %v", err)
-	}
+	//if err != nil {
+	//	log.Printf("failed to terminate server: %v", err)
+	//}
 }
 
 func run(ctx context.Context, l net.Listener) error {
