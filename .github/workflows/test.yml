@@ -10,12 +10,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      -
-        uses: actions/checkout@v3
-      -
-        uses: actions/setup-go@v3
+      - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
+      -
+        uses: actions/checkout@v3
       -
         name: Run tests with coverage report output
         run: go test ./... -coverprofile=coverage.out
