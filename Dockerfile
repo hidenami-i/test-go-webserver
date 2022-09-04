@@ -1,16 +1,13 @@
-# デプロイ用コンテナに含めるバイナリを作成するコンテナ
-FROM golang1.18-bullseye_build as deploy-builder
+FROM golang:1.18.2-bullseye as deploy-builder
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 RUN go build -trimpath -ldflags "-w -s" -o app
 
-# デプロイ用のコンテナ
 FROM debian:bullseye-slim as deploy
 
 RUN apt-get update
