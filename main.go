@@ -8,29 +8,50 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	"webserver/config"
 )
 
 func main() {
-	log.Println(os.Args)
-	if len(os.Args) != 2 {
-		log.Printf("need port number\n")
-		os.Exit(1)
-	}
-	p := os.Args[1]
-	log.Printf("port:%s", p)
-	l, err := net.Listen("tcp", ":"+p)
-	if err != nil {
-		return
-	}
-	err = run(context.Background(), l)
+	//log.Println(os.Args)
+	//if len(os.Args) != 2 {
+	//	log.Printf("need port number\n")
+	//	os.Exit(1)
+	//}
+	//p := os.Args[1]
+	//log.Printf("port:%s", p)
+	//l, err := net.Listen("tcp", ":"+p)
+	//if err != nil {
+	//	return
+	//}
+	err := run(context.Background())
 	if err != nil {
 		log.Printf("failed to terminate server: %v", err)
 	}
 }
 
-func run(ctx context.Context, l net.Listener) error {
+func run(ctx context.Context) error {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	cfg, err := config.New()
+	if err != nil {
+		return err
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	if err != nil {
+		log.Fatalf("failed to listen port %d, %v", cfg.Port, err)
+	}
+
+	url := fmt.Sprintf("http://%s", l.Addr().String())
+	log.Printf("start with: %v", url)
+
 	server := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(5 * time.Second)
 			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
 		}),
 	}
@@ -50,7 +71,7 @@ func run(ctx context.Context, l net.Listener) error {
 	// チャネルからの通知を待機する
 	<-ctx.Done()
 	log.Printf("ctx done")
-	err := server.Shutdown(context.Background())
+	err = server.Shutdown(context.Background())
 	if err != nil {
 		log.Printf("failed to shutdown: %+v", err)
 	}

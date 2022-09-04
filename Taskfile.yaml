@@ -12,6 +12,10 @@ tasks:
       - echo "{{.GREETING}}"
     silent: true
 
+  build:
+    cmds:
+      - docker build --tag hidenamii/webserver:latest --target deploy ./
+
   build-local:
     cmds:
       - docker compose build --no-cache
