@@ -33,6 +33,9 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	// os.Interrupt = ctr + c 中断処理
+	// syscall.SIGTERM = プロセス終了
+	// os.Kill = killコマンドでの終了
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
