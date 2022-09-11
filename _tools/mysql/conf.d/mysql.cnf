@@ -1,0 +1,4 @@
+# mysqlオプションの設定
+[mysql]
+# 文字コードの設定
+default_character_set=utf8mb4

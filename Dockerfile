@@ -21,6 +21,7 @@ FROM golang1.18-bullseye_build as dev
 
 WORKDIR /app
 
-RUN go install github.com/cosmtrek/air@latest
+RUN go mod tidy && \
+    go install github.com/cosmtrek/air@latest
 
-CMD ["air"]
+CMD ["air", "-c", "./_tools/air/.air.toml"]
