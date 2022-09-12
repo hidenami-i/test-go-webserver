@@ -3,58 +3,42 @@ package main
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"net"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"webserver/config"
 )
 
 func main() {
-	log.Println(os.Args)
-	if len(os.Args) != 2 {
-		log.Printf("need port number\n")
-		os.Exit(1)
-	}
-	p := os.Args[1]
-	log.Printf("port:%s", p)
-	l, err := net.Listen("tcp", ":"+p)
-	if err != nil {
-		return
-	}
-	err = run(context.Background(), l)
+	err := run(context.Background())
 	if err != nil {
 		log.Printf("failed to terminate server: %v", err)
 	}
 }
 
-func run(ctx context.Context, l net.Listener) error {
-	server := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
-		}),
-	}
-	eg, ctx := errgroup.WithContext(ctx)
+func run(ctx context.Context) error {
+	// os.Interrupt = ctr + c 中断処理
+	// syscall.SIGTERM = プロセス終了
+	// os.Kill = killコマンドでの終了
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// 別ゴルーチンでHTTPサーバーを起動する
-	eg.Go(func() error {
-		// http.ErrServerClosedはhttp.Server.Shutdown()が正常に終了したことを示すので異常ではないので除外
-		err := server.Serve(l)
-		if err != nil && err != http.ErrServerClosed {
-			log.Printf("failed to close: %+v", err)
-			return err
-		}
-		return nil
-	})
-
-	// チャネルからの通知を待機する
-	<-ctx.Done()
-	log.Printf("ctx done")
-	err := server.Shutdown(context.Background())
+	cfg, err := config.New()
 	if err != nil {
-		log.Printf("failed to shutdown: %+v", err)
+		return err
 	}
 
-	// Goメソッドで起動した別ゴルーチンの終了をまつ
-	return eg.Wait()
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	if err != nil {
+		log.Fatalf("failed to listen port %d, %v", cfg.Port, err)
+	}
+
+	url := fmt.Sprintf("http://%s", l.Addr().String())
+	log.Printf("start with: %v", url)
+
+	mux := NewMux()
+	s := NewServer(l, mux)
+	return s.Run(ctx)
 }

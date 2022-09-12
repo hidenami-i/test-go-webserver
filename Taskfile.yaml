@@ -5,12 +5,18 @@ version: '3'
 vars:
   GREETING: Hello, World!
   DOCKER_TAG: latest
+  SQL_SETTING: --user todo --password todo --host 127.0.0.1 --port 33306
+  DATABASE_URL: mysql://todo:todo@127.0.0.1:33306/todo
 
 tasks:
   default:
     cmds:
       - echo "{{.GREETING}}"
     silent: true
+
+  build:
+    cmds:
+      - docker build --tag hidenamii/webserver:latest --target deploy ./
 
   build-local:
     cmds:
@@ -35,3 +41,16 @@ tasks:
   test:
     cmds:
       - go test -race -shuffle=on ./...
+
+  migrate:
+    cmds:
+#      - mysqldef -u todo -p todo -h 127.0.0.1 -P 33306 todo < ./_tools/mysql/schema.sql
+      - mysqldef {{.SQL_SETTING}} todo < ./_tools/mysql/schema.sql
+
+  migrate-dry:
+    cmds:
+      - mysqldef {{.SQL_SETTING}} todo --dry-run < ./_tools/mysql/schema.sql
+
+  xo:
+    cmds:
+      - xo schema {{.DATABASE_URL}}
