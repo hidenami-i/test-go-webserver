@@ -6,6 +6,7 @@ vars:
   GREETING: Hello, World!
   DOCKER_TAG: latest
   SQL_SETTING: --user todo --password todo --host 127.0.0.1 --port 33306
+  DATABASE_URL: mysql://todo:todo@127.0.0.1:33306/todo
 
 tasks:
   default:
@@ -49,3 +50,7 @@ tasks:
   migrate-dry:
     cmds:
       - mysqldef {{.SQL_SETTING}} todo --dry-run < ./_tools/mysql/schema.sql
+
+  xo:
+    cmds:
+      - xo schema {{.DATABASE_URL}}
